@@ -1,0 +1,5 @@
+Segment_ID,age,gender,marital_status,dependents,education_level,occupation,employment_status,annual_income,credit_score,avg_monthly_expense,vehicle_owner,budget_per_month,customer_tenure_years,coverage_preferences,risk_tolerance
+0,37.45,1.02,1.2,1.47,0.89,7.96,0.0,81427.14,699.35,6598.58,1.0,253.61,5.16,12.99,0.98
+1,63.65,0.95,3.0,2.03,1.5,6.33,1.1,43244.32,697.78,3515.87,0.7,251.74,5.19,13.05,1.02
+2,45.61,1.0,0.98,1.68,1.08,7.93,0.9,64065.81,701.85,5191.24,0.0,252.61,5.31,12.88,0.98
+3,50.91,1.0,0.88,1.76,1.23,7.52,1.63,51349.86,699.35,4163.33,1.0,249.22,5.24,12.83,1.01
