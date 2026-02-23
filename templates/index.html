@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Coverage Recommendation System</title>
+  <style>
+    body {
+      font-family: "Inter", Arial, sans-serif;
+      max-width: 950px;
+      margin: 30px auto;
+      padding: 0 20px;
+      background: #eef1f5;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: #1a3d7c;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      transition: 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    .error {
+      background: #ffe6e6;
+      color: #a00;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #e60000;
+    }
+
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      background: #fafafa;
+      transition: 0.2s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #1a73e8;
+      background: #fff;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 5px;
+      color: #1a3d7c;
+    }
+
+    input[type="number"] {
+      width: 80px;
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      background: #fafafa;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      background: #1a73e8;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 12px;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      background: #145abd;
+    }
+
+    pre {
+      background: #2b2b2b;
+      color: #e8e8e8;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Recommendation sections */
+    .rec-policy-card {
+      border: 1px solid #d6d9df;
+      padding: 18px;
+      border-radius: 10px;
+      margin-top: 15px;
+      background: #fbfcff;
+    }
+
+    .rec-policy-card h3 {
+      margin-top: 0;
+      color: #1a3d7c;
+    }
+
+    /* Agent mini-cards */
+    .agent-card {
+      background: #ffffff;
+      border: 1px solid #d6d9df;
+      padding: 15px;
+      margin: 12px 0;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: 0.2s;
+    }
+
+    .agent-card:hover {
+      background: #f8fbff;
+      border-color: #1a73e8;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    }
+
+    .agent-header {
+      font-weight: 600;
+      font-size: 16px;
+      color: #1a3d7c;
+    }
+
+    .agent-meta {
+      font-size: 13px;
+      color: #777;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .section-divider {
+      margin: 25px 0 15px 0;
+      height: 1px;
+      background: #cdd4df;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Coverage Recommendation System</h1>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <!-- INPUT FORM -->
+  <div class="card">
+    <form method="post">
+      <label for="transcript">Call Transcript</label>
+      <textarea id="transcript" name="transcript" rows="12"
+        placeholder="Paste the agent–customer call transcript here...">{{ request.form.transcript or '' }}</textarea>
+
+      <label for="top_n">Number of Recommendations</label>
+      <input type="number" id="top_n" name="top_n" min="1" max="5"
+             value="{{ request.form.top_n or 2 }}">
+
+      <br>
+      <button type="submit" class="btn">Get Recommendations</button>
+    </form>
+  </div>
+
+  <!-- Extracted details -->
+  {% if extracted %}
+    <div class="card">
+      <h2>Extracted Customer Details</h2>
+      <pre>{{ extracted | tojson(indent=2) }}</pre>
+    </div>
+  {% endif %}
+
+  <!-- Customer profile -->
+  {% if customer_profile %}
+    <div class="card">
+      <h2>Customer Profile Used by Recommender</h2>
+      <pre>{{ customer_profile | tojson(indent=2) }}</pre>
+    </div>
+  {% endif %}
+
+  <!-- Recommendations -->
+  {% if recommendations %}
+  <div class="card">
+    <h2>Policy Recommendations</h2>
+
+    <!-- COSINE SIMILARITY -->
+    <div class="section-divider"></div>
+    <h3>Cosine Similarity Based</h3>
+
+    {% for rec in recommendations.cosine_similarity_recommendations %}
+    <div class="rec-policy-card">
+      <h3>Policy Recommendation {{ loop.index }}</h3>
+
+      <ul>
+        <li><strong>Policy Type:</strong> {{ rec.policy_type }}</li>
+        <li><strong>Coverage Amount:</strong> ${{ "%.2f"|format(rec.coverage_amount) }}</li>
+        <li><strong>Premium:</strong> ${{ "%.2f"|format(rec.premium) }}</li>
+      </ul>
+
+      <h4>Recommended Agents</h4>
+
+      {% for agent in rec.recommended_agents %}
+      <div class="agent-card">
+        <div class="agent-header">{{ agent.agent_name }}</div>
+        <div class="agent-meta">{{ agent.agent_id }}</div>
+
+        <ul>
+          <li><strong>Region:</strong> {{ agent.region }}</li>
+          <li><strong>Specialization:</strong> {{ agent.specialization }}</li>
+          <li><strong>Experience:</strong> {{ agent.experience_years }} yrs</li>
+          <li><strong>Success Rate:</strong> {{ agent.success_rate * 100 }}%</li>
+          <li><strong>Rating:</strong> {{ agent.average_rating }}</li>
+          <li><strong>Clients:</strong> {{ agent.active_clients }}</li>
+          <li><strong>Languages:</strong> {{ agent.languages }}</li>
+          <li><strong>Contact:</strong>
+            <a href="tel:{{ agent.contact_number }}">{{ agent.contact_number }}</a> |
+            <a href="mailto:{{ agent.email }}">{{ agent.email }}</a>
+          </li>
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- CLUSTER BASED -->
+    <div class="section-divider"></div>
+    <h3>Cluster-Based</h3>
+
+    {% for rec in recommendations.cluster_based_recommendations %}
+    <div class="rec-policy-card">
+      <h3>Policy Recommendation {{ loop.index }}</h3>
+
+      <ul>
+        <li><strong>Policy Type:</strong> {{ rec.policy_type }}</li>
+        <li><strong>Coverage Amount:</strong> ${{ "%.2f"|format(rec.coverage_amount) }}</li>
+        <li><strong>Premium:</strong> ${{ "%.2f"|format(rec.premium) }}</li>
+      </ul>
+
+      <h4>Recommended Agents</h4>
+
+      {% for agent in rec.recommended_agents %}
+      <div class="agent-card">
+        <div class="agent-header">{{ agent.agent_name }}</div>
+        <div class="agent-meta">{{ agent.agent_id }}</div>
+
+        <ul>
+          <li><strong>Region:</strong> {{ agent.region }}</li>
+          <li><strong>Specialization:</strong> {{ agent.specialization }}</li>
+          <li><strong>Experience:</strong> {{ agent.experience_years }} yrs</li>
+          <li><strong>Success Rate:</strong> {{ agent.success_rate * 100 }}%</li>
+          <li><strong>Rating:</strong> {{ agent.average_rating }}</li>
+          <li><strong>Clients:</strong> {{ agent.active_clients }}</li>
+          <li><strong>Languages:</strong> {{ agent.languages }}</li>
+          <li><strong>Contact:</strong>
+            <a href="tel:{{ agent.contact_number }}">{{ agent.contact_number }}</a> |
+            <a href="mailto:{{ agent.email }}">{{ agent.email }}</a>
+          </li>
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</body>
+</html>
